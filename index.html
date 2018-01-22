@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>varda explorer</title>
+    <script src="./public/vue.js"></script>
+    <script src="./public/cy.js"></script>
+    <script src="./public/dag/dagre.js"></script>
+    <script src="./public/dag/cytoscape-dagre.js"></script>
+    <style>
+        #cy {
+            position: absolute;
+            left: 50px;
+            right: 400px;
+            top: 45px;
+            bottom: 0;
+            z-index: -999;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+
+        <div id="cy"></div>
+        <div v-bind:style="{ position: 'absolute', left: w, right: 0, top: '45px', bottom: 0  }">
+
+            <input id="n" autocomplete="off" placeholder="node" v-model="node" />
+            <br>
+            <input id="e" autocomplete="off" placeholder="link to" v-model="target" />
+            <br>
+            <button v-on:click="add">Add</button>
+        </div>
+    </div>
+    <script>
+        ess = [
+            { data: { id: 'a' } },
+            { data: { id: 'b' } },
+            { data: { id: 'c' } },
+            { data: { id: 'd' } },
+            { data: { id: 'e' } },
+            { data: { id: 'f' } },
+            { data: { source: 'b', target: 'a' } },
+            { data: { source: 'c', target: 'a' } },
+            { data: { source: 'd', target: 'c' } },
+            { data: { source: 'e', target: 'b' } },
+            { data: { source: 'f', target: 'c' } },
+        ]
+        var data = {
+            ess: ess, value: '', w: null, node: null, target: null
+        }
+        var vm = new Vue({
+            el: '#app',
+            data: data,
+            beforeCreate() {
+                this.w = document.getElementById("cy").offsetWidth
+            },
+            methods: {
+
+                add: function (event) {
+                    // console.log('add')
+                    const node = this.node
+                    const target = this.target
+                    if (node && target) {
+                        let { x, y } = cy.$(`#${target}`).position()
+
+                        cy.add([{ group: "nodes", data: { id: node } }, { group: "edges", data: { source: node, target: target } }])
+                        cy.layout({ name: 'dagre', pan: { x: 0, y: 50 }, zoom: undefined, fit: true, padding: 30 }).run()
+
+                        this.node = null;
+                        this.target = null;
+                    }
+                }
+            }
+        })
+        var cy = cytoscape({
+            container: document.getElementById("cy"),
+            elements: vm.ess,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'background-color': '#666',
+                        'label': 'data(id)',
+                        "shape": 'star'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': '#ccc',
+                        'target-arrow-color': '#ccc',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier'
+                    }
+                }
+            ],
+
+            layout: {
+                name: 'dagre',
+                zoom: 2,
+
+            },
+
+        })
+
+        cy.on('tap', 'node', function (evt) {
+            var node = evt.target;
+            console.log('tapped ' + node.id());
+            console.log(node.position())
+        });
+        cy.zoomingEnabled(false)
+    </script>
+</body>
+
+</html>
